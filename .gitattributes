@@ -1,0 +1,9 @@
+# Ensure .env files are never committed
+.env filter=git-crypt diff=git-crypt
+.env.* !filter !diff
+
+# Line endings
+* text=auto
+*.sh text eol=lf
+*.py text eol=lf
+*.md text eol=lf
