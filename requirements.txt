@@ -19,7 +19,9 @@ numpy==1.26.3
 # FREE CAPTCHA Solving (No API key needed!)
 SpeechRecognition==3.10.1
 pydub==0.25.1
-PyAudio==0.2.14
+# PyAudio is optional - only needed for microphone input (not required for audio CAPTCHA solving)
+# Install manually if needed: sudo apt-get install portaudio19-dev && pip install PyAudio
+# PyAudio==0.2.14
 
 # Optional: Only if using paid services
 # 2captcha-python==1.2.1

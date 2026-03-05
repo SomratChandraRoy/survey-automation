@@ -115,8 +115,17 @@ Environment="PATH=$(pwd)/venv/bin:/usr/local/bin:/usr/bin:/bin"
 ExecStart=$(pwd)/venv/bin/python3 $(pwd)/main.py
 Restart=always
 RestartSec=10
+StartLimitInterval=200
+StartLimitBurst=5
 StandardOutput=append:$(pwd)/logs/automation.log
-StandardError=append:$(pwd)/logs/automation.log
+StandardError=append:$(pwd)/logs/error.log
+
+# Security hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=$(pwd)/logs $(pwd)/screenshots $(pwd)/data $(pwd)/.env
 
 [Install]
 WantedBy=multi-user.target

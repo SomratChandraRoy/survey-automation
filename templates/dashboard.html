@@ -80,6 +80,10 @@
             color: #667eea;
         }
 
+        .stat-value.money {
+            color: #28a745;
+        }
+
         .status {
             display: inline-block;
             padding: 5px 15px;
@@ -117,6 +121,10 @@
             border-left: 3px solid #667eea;
             padding-left: 10px;
         }
+
+        .log-entry.error { border-left-color: #dc3545; color: #f88; }
+        .log-entry.warning { border-left-color: #ffc107; color: #ffd; }
+        .log-entry.success { border-left-color: #28a745; color: #8f8; }
 
         .progress-bar {
             width: 100%;
@@ -164,6 +172,31 @@
             margin-top: 20px;
             font-size: 0.9em;
         }
+
+        .earnings-highlight {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            border-radius: 15px;
+            padding: 25px;
+            color: white;
+            box-shadow: 0 10px 30px rgba(40, 167, 69, 0.3);
+        }
+
+        .earnings-highlight h2 {
+            color: white;
+            border-bottom-color: rgba(255,255,255,0.4);
+        }
+
+        .earnings-highlight .stat {
+            background: rgba(255,255,255,0.15);
+        }
+
+        .earnings-highlight .stat-label {
+            color: rgba(255,255,255,0.85);
+        }
+
+        .earnings-highlight .stat-value {
+            color: white;
+        }
     </style>
 </head>
 
@@ -183,12 +216,40 @@
                     <span class="stat-value" id="surveys-failed">0</span>
                 </div>
                 <div class="stat">
+                    <span class="stat-label">Success Rate</span>
+                    <span class="stat-value" id="success-rate">0%</span>
+                </div>
+                <div class="stat">
                     <span class="stat-label">CAPTCHAs Solved</span>
                     <span class="stat-value" id="captchas-solved">0</span>
                 </div>
                 <div class="stat">
                     <span class="stat-label">Status</span>
                     <span class="status running" id="status">Running</span>
+                </div>
+            </div>
+
+            <div class="earnings-highlight">
+                <h2>💰 Earnings Tracker</h2>
+                <div class="stat">
+                    <span class="stat-label">Today</span>
+                    <span class="stat-value" id="today-earnings">$0.00</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">This Week</span>
+                    <span class="stat-value" id="week-earnings">$0.00</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">This Month</span>
+                    <span class="stat-value" id="month-earnings">$0.00</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">Total Earned</span>
+                    <span class="stat-value" id="total-earnings">$0.00</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">Avg per Survey</span>
+                    <span class="stat-value" id="avg-per-survey">$0.00</span>
                 </div>
             </div>
 
@@ -235,15 +296,36 @@
     </div>
 
     <script>
+        function fmt(val) { return '$' + (parseFloat(val) || 0).toFixed(2); }
+
         function updateStats() {
             fetch('/api/stats')
                 .then(response => response.json())
                 .then(data => {
-                    document.getElementById('surveys-completed').textContent = data.surveys_completed || 0;
-                    document.getElementById('surveys-failed').textContent = data.surveys_failed || 0;
+                    const completed = parseInt(data.surveys_completed) || 0;
+                    const failed = parseInt(data.surveys_failed) || 0;
+                    const total = completed + failed;
+                    const rate = total > 0 ? Math.round(completed / total * 100) : 0;
+
+                    document.getElementById('surveys-completed').textContent = completed;
+                    document.getElementById('surveys-failed').textContent = failed;
+                    document.getElementById('success-rate').textContent = rate + '%';
                     document.getElementById('captchas-solved').textContent = data.captchas_solved || 0;
                 })
                 .catch(error => console.error('Error fetching stats:', error));
+        }
+
+        function updateEarnings() {
+            fetch('/api/earnings')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('today-earnings').textContent = fmt(data.today_earnings);
+                    document.getElementById('week-earnings').textContent = fmt(data.this_week_earnings);
+                    document.getElementById('month-earnings').textContent = fmt(data.this_month_earnings);
+                    document.getElementById('total-earnings').textContent = fmt(data.total_earnings);
+                    document.getElementById('avg-per-survey').textContent = fmt(data.average_per_survey);
+                })
+                .catch(error => console.error('Error fetching earnings:', error));
         }
 
         function updateSystem() {
@@ -278,8 +360,12 @@
 
                     data.forEach(line => {
                         const entry = document.createElement('div');
+                        const lineStr = String(line);
                         entry.className = 'log-entry';
-                        entry.textContent = line;
+                        if (lineStr.includes('ERROR') || lineStr.includes('❌')) entry.classList.add('error');
+                        else if (lineStr.includes('WARNING') || lineStr.includes('⚠')) entry.classList.add('warning');
+                        else if (lineStr.includes('✅') || lineStr.includes('💰')) entry.classList.add('success');
+                        entry.textContent = lineStr;
                         logsDiv.appendChild(entry);
                     });
 
@@ -290,6 +376,7 @@
 
         function refreshData() {
             updateStats();
+            updateEarnings();
             updateSystem();
             updateLogs();
             document.getElementById('timestamp').textContent = 'Last updated: ' + new Date().toLocaleString();
@@ -298,8 +385,8 @@
         // Initial load
         refreshData();
 
-        // Auto-refresh every 5 seconds
-        setInterval(refreshData, 5000);
+        // Auto-refresh every 10 seconds
+        setInterval(refreshData, 10000);
     </script>
 </body>
 

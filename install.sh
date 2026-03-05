@@ -242,15 +242,17 @@ Environment="PATH=$SCRIPT_DIR/venv/bin:/usr/local/bin:/usr/bin:/bin"
 ExecStart=$SCRIPT_DIR/venv/bin/python3 $SCRIPT_DIR/main.py
 Restart=always
 RestartSec=10
+StartLimitInterval=200
+StartLimitBurst=5
 StandardOutput=append:$SCRIPT_DIR/logs/automation.log
 StandardError=append:$SCRIPT_DIR/logs/error.log
 
-# Security
+# Security hardening
 NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=strict
 ProtectHome=read-only
-ReadWritePaths=$SCRIPT_DIR/logs $SCRIPT_DIR/screenshots $SCRIPT_DIR/data
+ReadWritePaths=$SCRIPT_DIR/logs $SCRIPT_DIR/screenshots $SCRIPT_DIR/data $SCRIPT_DIR/.env
 
 [Install]
 WantedBy=multi-user.target
