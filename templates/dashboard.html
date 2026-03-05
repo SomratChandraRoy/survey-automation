@@ -296,7 +296,7 @@
     </div>
 
     <script>
-        function fmt(val) { return '$' + (parseFloat(val) || 0).toFixed(2); }
+        function formatCurrency(val) { return '$' + (parseFloat(val) || 0).toFixed(2); }
 
         function updateStats() {
             fetch('/api/stats')
@@ -319,11 +319,11 @@
             fetch('/api/earnings')
                 .then(response => response.json())
                 .then(data => {
-                    document.getElementById('today-earnings').textContent = fmt(data.today_earnings);
-                    document.getElementById('week-earnings').textContent = fmt(data.this_week_earnings);
-                    document.getElementById('month-earnings').textContent = fmt(data.this_month_earnings);
-                    document.getElementById('total-earnings').textContent = fmt(data.total_earnings);
-                    document.getElementById('avg-per-survey').textContent = fmt(data.average_per_survey);
+                    document.getElementById('today-earnings').textContent = formatCurrency(data.today_earnings);
+                    document.getElementById('week-earnings').textContent = formatCurrency(data.this_week_earnings);
+                    document.getElementById('month-earnings').textContent = formatCurrency(data.this_month_earnings);
+                    document.getElementById('total-earnings').textContent = formatCurrency(data.total_earnings);
+                    document.getElementById('avg-per-survey').textContent = formatCurrency(data.average_per_survey);
                 })
                 .catch(error => console.error('Error fetching earnings:', error));
         }
@@ -360,12 +360,12 @@
 
                     data.forEach(line => {
                         const entry = document.createElement('div');
-                        const lineStr = String(line);
+                        const logLine = String(line);
                         entry.className = 'log-entry';
-                        if (lineStr.includes('ERROR') || lineStr.includes('❌')) entry.classList.add('error');
-                        else if (lineStr.includes('WARNING') || lineStr.includes('⚠')) entry.classList.add('warning');
-                        else if (lineStr.includes('✅') || lineStr.includes('💰')) entry.classList.add('success');
-                        entry.textContent = lineStr;
+                        if (logLine.includes('ERROR') || logLine.includes('❌')) entry.classList.add('error');
+                        else if (logLine.includes('WARNING') || logLine.includes('⚠')) entry.classList.add('warning');
+                        else if (logLine.includes('✅') || logLine.includes('💰')) entry.classList.add('success');
+                        entry.textContent = logLine;
                         logsDiv.appendChild(entry);
                     });
 

@@ -3,9 +3,10 @@
 import time
 import random
 import json
+import os
 import traceback
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timedelta
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -518,9 +519,6 @@ class BrowserAutomation:
         try:
             limit_file = self.settings.data_dir / 'daily_limit.json'
             if limit_file.exists():
-                import json
-                from datetime import datetime
-                
                 with open(limit_file, 'r') as f:
                     data = json.load(f)
                 
@@ -537,9 +535,6 @@ class BrowserAutomation:
     def _update_daily_limit(self):
         """Update daily survey count"""
         try:
-            import json
-            from datetime import datetime
-            
             limit_file = self.settings.data_dir / 'daily_limit.json'
             today = datetime.now().strftime('%Y-%m-%d')
             
@@ -563,14 +558,12 @@ class BrowserAutomation:
     def _track_earnings(self, amount: float, duration: float):
         """Track earnings from completed survey with accurate period calculations"""
         try:
-            import json
-            from datetime import datetime, timedelta
-
             earnings_file = self.settings.data_dir / 'earnings.json'
 
             now = datetime.now()
+            iso = now.isocalendar()
             today_str = now.strftime('%Y-%m-%d')
-            week_str = now.strftime('%Y-W%W')
+            week_str = f'{iso[0]}-W{iso[1]:02d}'  # ISO year and week number
             month_str = now.strftime('%Y-%m')
 
             if earnings_file.exists():
@@ -792,16 +785,13 @@ class BrowserAutomation:
             cookie_file = self.settings.cookies_dir / 'session.json'
             if cookie_file.exists():
                 # Check cookie age (expire after 7 days)
-                import os
-                from datetime import datetime, timedelta
-                
                 file_age = datetime.now() - datetime.fromtimestamp(os.path.getmtime(cookie_file))
                 if file_age > timedelta(days=7):
                     logger.info("Cookies are too old (>7 days), will re-login")
                     return False
                 
                 # Navigate to domain first (required for setting cookies)
-                self.driver.get('https://opinion-edge.com/')
+                self.driver.get(f"{self.settings.opinion_edge_base_url.rstrip('/')}/")
                 time.sleep(2)
                 
                 with open(cookie_file, 'r') as f:

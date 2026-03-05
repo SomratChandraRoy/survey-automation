@@ -1,5 +1,6 @@
 """Real-time monitoring dashboard"""
 
+import hmac
 import json
 import traceback
 import functools
@@ -31,7 +32,6 @@ class MonitoringDashboard:
         cfg_pass = self.settings.dashboard_password
         if not cfg_user or not cfg_pass:
             return True  # Auth not configured, allow all
-        import hmac
         return (
             hmac.compare_digest(username, cfg_user)
             and hmac.compare_digest(password, cfg_pass)

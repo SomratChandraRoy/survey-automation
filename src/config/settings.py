@@ -1,7 +1,7 @@
 """Configuration management"""
 
+import hashlib
 import os
-import secrets
 from pathlib import Path
 from dotenv import load_dotenv
 from pydantic_settings import BaseSettings
@@ -97,7 +97,6 @@ class Settings(BaseSettings):
         if self.flask_secret_key:
             return self.flask_secret_key
         # Derive a stable key from credentials so it survives restarts
-        import hashlib
         seed = f"{self.opinion_edge_email}:{self.opinion_edge_password}:survey-automation"
         return hashlib.sha256(seed.encode()).hexdigest()
     
