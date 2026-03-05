@@ -2,8 +2,8 @@
 
 **Enterprise-grade automated survey completion system with AI-powered decision making, advanced human behavior simulation, and comprehensive monitoring.**
 
-[![CI/CD](https://github.com/yourusername/survey-automation/workflows/CI%2FCD%20Pipeline/badge.svg)](https://github.com/yourusername/survey-automation/actions)
-[![Docker](https://img.shields.io/docker/v/yourusername/survey-automation?label=docker)](https://hub.docker.com/r/yourusername/survey-automation)
+[![CI/CD](https://github.com/SomratChandraRoy/survey-automation/workflows/CI%2FCD%20Pipeline/badge.svg)](https://github.com/SomratChandraRoy/survey-automation/actions)
+[![Docker](https://img.shields.io/docker/v/somratchandraroy/survey-automation?label=docker)](https://hub.docker.com/r/somratchandraroy/survey-automation)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.8%2B-blue)](https://www.python.org/)
 
@@ -65,6 +65,9 @@
 
 ## 🚀 Quick Start (One-Command Install)
 
+> ### 📖 New to this project? Read the complete beginner guide first:
+> **[👉 stepsforstarttoearn.md](stepsforstarttoearn.md)** — Full step-by-step guide for DigitalOcean Ubuntu with every command you need.
+
 ### Prerequisites
 - Ubuntu 20.04+ or Debian 11+ (Linux)
 - 8GB+ RAM (16GB recommended)
@@ -76,13 +79,17 @@
 
 ```bash
 # 1. Clone repository
-git clone https://github.com/yourusername/survey-automation.git
+git clone https://github.com/SomratChandraRoy/survey-automation.git
 cd survey-automation
 
-# 2. Make install script executable
+# 2. Copy and configure environment
+cp .env.example .env
+nano .env   # Fill in your Opinion Edge credentials
+
+# 3. Make install script executable
 chmod +x install.sh
 
-# 3. Run one-command installer
+# 4. Run one-command installer
 ./install.sh
 ```
 
@@ -596,11 +603,14 @@ python main.py
 2. **Check errors**: `cat data/error_log.json`
 3. **Check health**: `curl http://localhost:5000/api/health`
 4. **Read documentation**: See `md/` folder
-5. **Open issue**: [GitHub Issues](https://github.com/yourusername/survey-automation/issues)
+5. **Open issue**: [GitHub Issues](https://github.com/SomratChandraRoy/survey-automation/issues)
 
 ---
 
 ## 📚 Documentation
+
+### 🚀 Start Here
+- **[stepsforstarttoearn.md](stepsforstarttoearn.md)** — **Complete DigitalOcean Ubuntu setup guide** with every command needed to go from zero to earning money
 
 ### Quick References
 - [START_HERE.md](md/START_HERE.md) - Master guide
@@ -630,7 +640,7 @@ We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guid
 
 ```bash
 # 1. Fork and clone
-git clone https://github.com/yourusername/survey-automation.git
+git clone https://github.com/SomratChandraRoy/survey-automation.git
 cd survey-automation
 
 # 2. Create virtual environment
@@ -676,7 +686,7 @@ This software is for educational purposes only. Users are responsible for comply
 
 ## 🌟 Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=yourusername/survey-automation&type=Date)](https://star-history.com/#yourusername/survey-automation&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=SomratChandraRoy/survey-automation&type=Date)](https://star-history.com/#SomratChandraRoy/survey-automation&Date)
 
 ---
 
@@ -684,7 +694,7 @@ This software is for educational purposes only. Users are responsible for comply
 
 - 📧 Email: support@example.com
 - 💬 Discord: [Join our server](https://discord.gg/example)
-- 🐛 Issues: [GitHub Issues](https://github.com/yourusername/survey-automation/issues)
+- 🐛 Issues: [GitHub Issues](https://github.com/SomratChandraRoy/survey-automation/issues)
 - 📖 Docs: [Full Documentation](https://docs.example.com)
 
 ---
