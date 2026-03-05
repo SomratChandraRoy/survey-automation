@@ -1,5 +1,6 @@
 """Configuration management"""
 
+import hashlib
 import os
 from pathlib import Path
 from dotenv import load_dotenv
@@ -16,11 +17,14 @@ class Settings(BaseSettings):
     opinion_edge_email: str = Field(..., env='OPINION_EDGE_EMAIL')
     opinion_edge_password: str = Field(..., env='OPINION_EDGE_PASSWORD')
     
-    # Proxy Configuration
-    proxy_host: str = Field(..., env='PROXY_HOST')
-    proxy_port: int = Field(..., env='PROXY_PORT')
-    proxy_username: str = Field(..., env='PROXY_USERNAME')
-    proxy_password: str = Field(..., env='PROXY_PASSWORD')
+    # Base URL for Opinion Edge (configurable for panel subdomain)
+    opinion_edge_base_url: str = Field(default='https://panel.opinion-edge.com', env='OPINION_EDGE_BASE_URL')
+
+    # Proxy Configuration (all optional - leave blank to run without proxy)
+    proxy_host: str = Field(default='', env='PROXY_HOST')
+    proxy_port: int = Field(default=0, env='PROXY_PORT')
+    proxy_username: str = Field(default='', env='PROXY_USERNAME')
+    proxy_password: str = Field(default='', env='PROXY_PASSWORD')
     
     # Ollama Configuration
     ollama_host: str = Field(default='http://localhost:11434', env='OLLAMA_HOST')
@@ -58,6 +62,11 @@ class Settings(BaseSettings):
     # Monitoring
     flask_port: int = Field(default=5000, env='FLASK_PORT')
     flask_debug: bool = Field(default=False, env='FLASK_DEBUG')
+    flask_secret_key: str = Field(default='', env='FLASK_SECRET_KEY')
+    
+    # Dashboard authentication (optional)
+    dashboard_username: str = Field(default='', env='DASHBOARD_USERNAME')
+    dashboard_password: str = Field(default='', env='DASHBOARD_PASSWORD')
     
     # Paths
     base_dir: Path = Path(__file__).parent.parent.parent
@@ -69,9 +78,27 @@ class Settings(BaseSettings):
     surveys_dir: Path = data_dir / 'surveys'
     
     @property
+    def proxy_enabled(self) -> bool:
+        """Check if proxy is configured"""
+        return bool(self.proxy_host and self.proxy_port)
+
+    @property
     def proxy_url(self) -> str:
         """Get formatted proxy URL"""
-        return f"http://{self.proxy_username}:{self.proxy_password}@{self.proxy_host}:{self.proxy_port}"
+        if not self.proxy_enabled:
+            return ''
+        if self.proxy_username and self.proxy_password:
+            return f"http://{self.proxy_username}:{self.proxy_password}@{self.proxy_host}:{self.proxy_port}"
+        return f"http://{self.proxy_host}:{self.proxy_port}"
+
+    @property
+    def effective_secret_key(self) -> str:
+        """Return configured secret key or generate a stable one from credentials"""
+        if self.flask_secret_key:
+            return self.flask_secret_key
+        # Derive a stable key from credentials so it survives restarts
+        seed = f"{self.opinion_edge_email}:{self.opinion_edge_password}:survey-automation"
+        return hashlib.sha256(seed.encode()).hexdigest()
     
     @property
     def persona_dict(self) -> dict:

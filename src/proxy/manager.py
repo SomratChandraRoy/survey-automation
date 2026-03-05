@@ -10,13 +10,17 @@ class ProxyManager:
     def __init__(self, settings):
         self.settings = settings
         self.proxy_url = settings.proxy_url
-        self.proxies = {
-            'http': self.proxy_url,
-            'https': self.proxy_url
-        }
+        self.proxies = (
+            {'http': self.proxy_url, 'https': self.proxy_url}
+            if self.proxy_url else {}
+        )
     
     def validate_proxy(self) -> bool:
         """Validate proxy connectivity and check for leaks"""
+        if not self.settings.proxy_enabled:
+            logger.info("No proxy configured - running without proxy (direct connection)")
+            return True
+
         logger.info("Validating proxy connection...")
         
         try:
@@ -33,14 +37,13 @@ class ProxyManager:
                 
                 # Check speed
                 start_time = time.time()
-                requests.get('https://www.google.com', proxies=self.proxies, timeout=10)
+                requests.get('https://www.google.com', proxies=self.proxies, timeout=15)
                 latency = time.time() - start_time
                 
                 logger.info(f"Proxy latency: {latency:.2f}s")
                 
                 if latency > 5:
-                    logger.warning("Proxy latency is high")
-                    return False
+                    logger.warning("Proxy latency is high (>5s) - continuing anyway")
                 
                 # Check for DNS leak
                 if not self._check_dns_leak():
@@ -78,6 +81,8 @@ class ProxyManager:
     
     def get_chrome_proxy_extension(self) -> dict:
         """Get proxy configuration for Chrome"""
+        if not self.proxy_url:
+            return {}
         return {
             'proxy': {
                 'http': self.proxy_url,

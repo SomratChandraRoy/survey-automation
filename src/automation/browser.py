@@ -3,9 +3,10 @@
 import time
 import random
 import json
+import os
 import traceback
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timedelta
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -149,14 +150,17 @@ class BrowserAutomation:
             
             options = uc.ChromeOptions()
             
-            # Proxy configuration
-            try:
-                proxy_url = self.settings.proxy_url
-                options.add_argument(f'--proxy-server={proxy_url}')
-                logger.debug(f"Proxy configured: {self.settings.proxy_host}:{self.settings.proxy_port}")
-            except Exception as e:
-                logger.error(f"Failed to configure proxy: {e}")
-                return False
+            # Proxy configuration (optional)
+            if self.settings.proxy_enabled:
+                try:
+                    proxy_url = self.settings.proxy_url
+                    options.add_argument(f'--proxy-server={proxy_url}')
+                    logger.debug(f"Proxy configured: {self.settings.proxy_host}:{self.settings.proxy_port}")
+                except Exception as e:
+                    logger.error(f"Failed to configure proxy: {e}")
+                    return False
+            else:
+                logger.info("Running without proxy (direct connection)")
             
             # Stealth options
             options.add_argument('--disable-blink-features=AutomationControlled')
@@ -229,11 +233,13 @@ class BrowserAutomation:
         """Login to Opinion Edge with human-like behavior"""
         logger.info("Starting login process...")
         
+        base_url = self.settings.opinion_edge_base_url.rstrip('/')
+
         try:
             # Check if we have valid cookies first
             if self.load_cookies():
                 logger.info("Found existing cookies, attempting to reuse session...")
-                self.driver.get('https://opinion-edge.com/mySurvey')
+                self.driver.get(f'{base_url}/mySurvey')
                 self.human_delay(3, 5)
                 
                 # Check if still logged in
@@ -244,7 +250,7 @@ class BrowserAutomation:
                     logger.info("Cookies expired, proceeding with login...")
             
             # Navigate to homepage
-            self.driver.get('https://opinion-edge.com/')
+            self.driver.get(f'{base_url}/')
             
             # Simulate human page scan
             self.human_behavior.simulate_page_scan()
@@ -391,8 +397,10 @@ class BrowserAutomation:
         """Navigate to survey page"""
         logger.info("Navigating to surveys...")
         
+        base_url = self.settings.opinion_edge_base_url.rstrip('/')
+
         try:
-            self.driver.get('https://opinion-edge.com/mySurvey')
+            self.driver.get(f'{base_url}/mySurvey')
             self.human_delay()
             
             # Wait for page load
@@ -471,7 +479,7 @@ class BrowserAutomation:
                         break
                 
                 # Return to survey list
-                self.driver.get('https://opinion-edge.com/mySurvey')
+                self.driver.get(f"{self.settings.opinion_edge_base_url.rstrip('/')}/mySurvey")
                 self.human_delay()
             
             logger.info(f"✅ Processed {surveys_processed} surveys")
@@ -511,9 +519,6 @@ class BrowserAutomation:
         try:
             limit_file = self.settings.data_dir / 'daily_limit.json'
             if limit_file.exists():
-                import json
-                from datetime import datetime
-                
                 with open(limit_file, 'r') as f:
                     data = json.load(f)
                 
@@ -530,9 +535,6 @@ class BrowserAutomation:
     def _update_daily_limit(self):
         """Update daily survey count"""
         try:
-            import json
-            from datetime import datetime
-            
             limit_file = self.settings.data_dir / 'daily_limit.json'
             today = datetime.now().strftime('%Y-%m-%d')
             
@@ -554,13 +556,16 @@ class BrowserAutomation:
             logger.error(f"Error updating daily limit: {e}")
     
     def _track_earnings(self, amount: float, duration: float):
-        """Track earnings from completed survey"""
+        """Track earnings from completed survey with accurate period calculations"""
         try:
-            import json
-            from datetime import datetime
-            
             earnings_file = self.settings.data_dir / 'earnings.json'
-            
+
+            now = datetime.now()
+            iso = now.isocalendar()
+            today_str = now.strftime('%Y-%m-%d')
+            week_str = f'{iso[0]}-W{iso[1]:02d}'  # ISO year and week number
+            month_str = now.strftime('%Y-%m')
+
             if earnings_file.exists():
                 with open(earnings_file, 'r') as f:
                     data = json.load(f)
@@ -569,26 +574,37 @@ class BrowserAutomation:
                     'total_earnings': 0,
                     'surveys_completed': 0,
                     'average_per_survey': 0,
-                    'today_earnings': 0,
-                    'this_week_earnings': 0,
-                    'this_month_earnings': 0,
+                    'periods': {},
                     'last_updated': None
                 }
-            
-            # Update totals
-            data['total_earnings'] += amount
-            data['surveys_completed'] += 1
-            data['average_per_survey'] = data['total_earnings'] / data['surveys_completed']
-            
-            # Update daily/weekly/monthly (simplified - just add to all)
-            data['today_earnings'] += amount
-            data['this_week_earnings'] += amount
-            data['this_month_earnings'] += amount
-            data['last_updated'] = datetime.now().isoformat()
-            
+
+            # Ensure periods dict exists (migrate old format)
+            if 'periods' not in data:
+                data['periods'] = {}
+
+            # Update period totals
+            for key in (today_str, week_str, month_str):
+                if key not in data['periods']:
+                    data['periods'][key] = {'earnings': 0, 'surveys': 0}
+                data['periods'][key]['earnings'] += amount
+                data['periods'][key]['surveys'] += 1
+
+            # Update overall totals
+            data['total_earnings'] = data.get('total_earnings', 0) + amount
+            data['surveys_completed'] = data.get('surveys_completed', 0) + 1
+            data['average_per_survey'] = (
+                data['total_earnings'] / data['surveys_completed']
+            )
+
+            # Convenience fields for dashboard
+            data['today_earnings'] = data['periods'].get(today_str, {}).get('earnings', 0)
+            data['this_week_earnings'] = data['periods'].get(week_str, {}).get('earnings', 0)
+            data['this_month_earnings'] = data['periods'].get(month_str, {}).get('earnings', 0)
+            data['last_updated'] = now.isoformat()
+
             with open(earnings_file, 'w') as f:
                 json.dump(data, f, indent=2)
-            
+
             logger.debug(f"Earnings tracked: ${amount:.2f}")
             
         except Exception as e:
@@ -769,16 +785,13 @@ class BrowserAutomation:
             cookie_file = self.settings.cookies_dir / 'session.json'
             if cookie_file.exists():
                 # Check cookie age (expire after 7 days)
-                import os
-                from datetime import datetime, timedelta
-                
                 file_age = datetime.now() - datetime.fromtimestamp(os.path.getmtime(cookie_file))
                 if file_age > timedelta(days=7):
                     logger.info("Cookies are too old (>7 days), will re-login")
                     return False
                 
                 # Navigate to domain first (required for setting cookies)
-                self.driver.get('https://opinion-edge.com/')
+                self.driver.get(f"{self.settings.opinion_edge_base_url.rstrip('/')}/")
                 time.sleep(2)
                 
                 with open(cookie_file, 'r') as f:

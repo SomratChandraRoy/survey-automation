@@ -132,6 +132,29 @@ class ErrorTracker:
         sorted_errors = sorted(error_types.items(), key=lambda x: x[1], reverse=True)
         return sorted_errors[:limit]
     
+    def log_error(self, category: str, error_type: str, error_msg: str):
+        """
+        Log an error by category, type, and message string.
+        This is the lightweight variant used throughout the codebase.
+        """
+        error_data = {
+            'timestamp': datetime.now().isoformat(),
+            'category': category,
+            'error_type': error_type,
+            'error_message': error_msg,
+            'traceback': '',
+            'context': {}
+        }
+
+        self.errors[category].append(error_data)
+        self.error_counts[category] += 1
+
+        if len(self.errors[category]) > 100:
+            self.errors[category] = self.errors[category][-100:]
+
+        self.save_errors()
+        logger.error(f"[{category}] {error_type}: {error_msg}")
+
     def get_troubleshooting_tips(self) -> list:
         """Get troubleshooting tips based on error patterns"""
         tips = []
